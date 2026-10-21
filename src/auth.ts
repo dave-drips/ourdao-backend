@@ -3,12 +3,12 @@ import { randomBytes } from 'crypto'
 import type { Pool } from 'pg'
 import { config } from './config.js'
 
-// Authentication failure counters (issue #183)
 /** Hex width of the millisecond timestamp prefix (12 digits holds epoch ms until year 10889). */
 export const NONCE_TIMESTAMP_HEX_LEN = 12
 /** Random bytes after the prefix, so prefix + random is 64 hex chars. */
 const NONCE_RANDOM_BYTES = 26
 
+// Authentication failure counters (issue #183)
 export const authStats = {
   challengesIssued: 0,
   verificationsSucceeded: 0,

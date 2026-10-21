@@ -211,7 +211,7 @@ describe('cache/redis', () => {
 
       // Redis returns: ioredis emits `ready`, which re-arms the log-once flag.
       FakeRedis.shouldFailConnection = false
-      redis.emit('ready')
+      redis!.emit('ready')
       await getOrSetCache('members:list:50', 30, fetcher)
       expect(store.has('members:list:50')).toBe(true)
       // Cache hits resume: the fetcher is not called again.

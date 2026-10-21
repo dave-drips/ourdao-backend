@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest'
-import { PostgresNonceStore } from '../src/auth.js'
+import { Keypair } from '@stellar/stellar-sdk'
+import { PostgresNonceStore, authenticateRequest } from '../src/auth.js'
 import { pool, query, queryOne } from '../src/db/index.js'
 import { closeDb, resetDb } from './db.js'
 
@@ -14,6 +15,18 @@ describe('PostgresNonceStore', () => {
   afterEach(async () => {
     await store.shutdown()
     closeDb()
+  })
+
+  it('authenticates a freshly issued nonce end to end', async () => {
+    const kp = Keypair.random()
+    const address = kp.publicKey()
+    const nonce = await store.issue(address)
+    const sig = kp.sign(Buffer.from(`${nonce}:${address}`)).toString('base64')
+    const result = await authenticateRequest(
+      { authorization: `StellarSignature ${address}:${sig}:${nonce}` },
+      store
+    )
+    expect(result).toEqual({ authenticated: true, address })
   })
 
   it('issues a nonce and stores it in Postgres', async () => {
