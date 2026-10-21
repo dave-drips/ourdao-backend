@@ -119,6 +119,12 @@ describe('admin_audit_log table', () => {
     expect((rows[1]!.payload as { ledger: number }).ledger).toBe(200)
   })
 
+  it('rejects UPDATE and DELETE (append-only)', async () => {
+    await insertAuditRow('GBTEST6', 'reset_cursor')
+    await expect(query("UPDATE admin_audit_log SET action = 'x' WHERE admin_address = 'GBTEST6'")).rejects.toThrow(/append-only/)
+    await expect(query("DELETE FROM admin_audit_log WHERE admin_address = 'GBTEST6'")).rejects.toThrow(/append-only/)
+  })
+
   it('id is a monotonically increasing BIGSERIAL', async () => {
     const id1 = await insertAuditRow('GBTEST5', 'reset_cursor')
     const id2 = await insertAuditRow('GBTEST5', 'manual_reindex')

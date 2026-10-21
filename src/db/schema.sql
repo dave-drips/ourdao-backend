@@ -364,3 +364,15 @@ CREATE TABLE IF NOT EXISTS admin_audit_log (
 CREATE INDEX IF NOT EXISTS admin_audit_log_admin_address_idx ON admin_audit_log (admin_address, created_at DESC);
 CREATE INDEX IF NOT EXISTS admin_audit_log_action_idx ON admin_audit_log (action, created_at DESC);
 CREATE INDEX IF NOT EXISTS admin_audit_log_created_at_idx ON admin_audit_log (created_at DESC);
+
+-- Append-only enforcement (migration 0032).
+CREATE OR REPLACE FUNCTION admin_audit_log_immutable() RETURNS trigger AS $$
+BEGIN
+  RAISE EXCEPTION 'admin_audit_log is append-only (% not allowed)', TG_OP;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS admin_audit_log_no_update_delete ON admin_audit_log;
+CREATE TRIGGER admin_audit_log_no_update_delete
+  BEFORE UPDATE OR DELETE ON admin_audit_log
+  FOR EACH ROW EXECUTE FUNCTION admin_audit_log_immutable();

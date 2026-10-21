@@ -4,6 +4,11 @@ import type { Pool } from 'pg'
 import { config } from './config.js'
 
 // Authentication failure counters (issue #183)
+/** Hex width of the millisecond timestamp prefix (12 digits holds epoch ms until year 10889). */
+export const NONCE_TIMESTAMP_HEX_LEN = 12
+/** Random bytes after the prefix, so prefix + random is 64 hex chars. */
+const NONCE_RANDOM_BYTES = 26
+
 export const authStats = {
   challengesIssued: 0,
   verificationsSucceeded: 0,
@@ -218,11 +223,11 @@ export class MemoryNonceStore implements NonceStore {
       throw new NonceStoreCapacityError(`Too many outstanding nonces for ${truncateAddress(address)}`)
     }
 
-    // Issue #266: Generate a timestamp-prefixed nonce (8 hex chars timestamp + 56 hex chars random)
+    // Issue #266: Generate a timestamp-prefixed nonce (12 hex chars timestamp + 52 hex chars random = 64)
     // to enable early expiration checks without hitting the database
     const timestamp = Date.now()
-    const timestampHex = timestamp.toString(16).padStart(8, '0')
-    const randomHex = randomBytes(28).toString('hex') // 28 bytes = 56 hex chars
+    const timestampHex = timestamp.toString(16).padStart(NONCE_TIMESTAMP_HEX_LEN, '0')
+    const randomHex = randomBytes(NONCE_RANDOM_BYTES).toString('hex')
     const nonce = timestampHex + randomHex
 
     this.store.set(nonce, {
@@ -315,11 +320,11 @@ export class PostgresNonceStore implements NonceStore {
     // two concurrent requests to both generate and store nonces. With nonce as the
     // primary key (issue #180), each call gets a distinct nonce stored atomically.
     const expiresAt = new Date(Date.now() + this.ttlMs)
-    // Issue #266: Generate a timestamp-prefixed nonce (8 hex chars timestamp + 56 hex chars random)
+    // Issue #266: Generate a timestamp-prefixed nonce (12 hex chars timestamp + 52 hex chars random = 64)
     // to enable early expiration checks without hitting the database
     const timestamp = Date.now()
-    const timestampHex = timestamp.toString(16).padStart(8, '0')
-    const randomHex = randomBytes(28).toString('hex') // 28 bytes = 56 hex chars
+    const timestampHex = timestamp.toString(16).padStart(NONCE_TIMESTAMP_HEX_LEN, '0')
+    const randomHex = randomBytes(NONCE_RANDOM_BYTES).toString('hex')
     const nonce = timestampHex + randomHex
 
     // Insert the new nonce. Each nonce is unique, so this is atomic and race-free.
@@ -510,12 +515,13 @@ export async function authenticateRequest(
   }
 
   // Issue #266: Parse and validate nonce timestamp before querying database.
-  // Nonces are 64-character hex strings; the first 8 characters encode the
+  // Nonces are 64-character hex strings; the first 12 characters encode the
   // unix milliseconds timestamp when the nonce was issued. Reject expired
   // nonces immediately without hitting the database to mitigate replay DoS.
   try {
-    const timestampHex = nonce.slice(0, 8)
+    const timestampHex = nonce.slice(0, NONCE_TIMESTAMP_HEX_LEN)
     const timestamp = Number.parseInt(timestampHex, 16)
+    if (Number.isNaN(timestamp)) throw new Error('non-hex nonce timestamp')
     const age = Date.now() - timestamp
     const maxAge = 300000 // 300 seconds in milliseconds
     

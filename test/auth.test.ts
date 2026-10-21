@@ -280,6 +280,17 @@ describe('authenticateRequest — characterization (#72)', () => {
     await store.shutdown()
   })
 
+  it('issues 64-char nonces whose prefix round-trips the issue time', async () => {
+    const store = new MemoryNonceStore()
+    const before = Date.now()
+    const nonce = await store.issue(G)
+    const issuedAt = Number.parseInt(nonce.slice(0, 12), 16)
+    expect(nonce).toHaveLength(64)
+    expect(issuedAt).toBeGreaterThanOrEqual(before)
+    expect(issuedAt).toBeLessThanOrEqual(Date.now())
+    await store.shutdown()
+  })
+
   it('returns the exact client-facing error string for each failure', async () => {
     expect(await authenticateRequest({}, alwaysValidNonce)).toMatchObject({
       error: 'Missing authentication headers',
