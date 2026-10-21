@@ -198,7 +198,7 @@ jobs:
       # the loaded image: buildx SBOM attestations can't be loaded into the
       # local Docker image store ("docker exporter does not support manifest lists").
       - name: Generate SBOM
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}
           format: 'cyclonedx'
@@ -215,7 +215,7 @@ jobs:
       # Publishes full findings to GitHub Actions step summary and enforces
       # a failure policy on HIGH and CRITICAL vulnerabilities.
       - name: Scan image with Trivy (capture summary)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}
           format: 'table'
@@ -238,7 +238,7 @@ jobs:
           fi
 
       - name: Enforce vulnerability policy (fail on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}
           format: 'table'
@@ -248,7 +248,7 @@ jobs:
           trivyignores: '.trivyignore'
 
       - name: Enforce vulnerability policy (fail on CRITICAL)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}
           format: 'table'

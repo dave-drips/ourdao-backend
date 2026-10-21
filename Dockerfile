@@ -23,7 +23,11 @@ ENV NODE_ENV=production
 RUN apk add --no-cache tini
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev \
+    # The runtime only needs `node`. Drop the base image's bundled npm/corepack
+    # (and their vendored dependencies) so they stop showing up in Trivy scans.
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+              /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 # Copy the built output with `node`-user ownership so the process can read it
 # without running as root.
