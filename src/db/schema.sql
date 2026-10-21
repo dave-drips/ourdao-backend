@@ -176,6 +176,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 CREATE INDEX IF NOT EXISTS notifications_address_idx ON notifications (address, read);
 CREATE INDEX IF NOT EXISTS notifications_event_id_address_idx ON notifications (event_id, address);
+CREATE UNIQUE INDEX IF NOT EXISTS notifications_event_id_address_uniq ON notifications (event_id, address) WHERE event_id IS NOT NULL;
 
 -- Lifetime money aggregates folded from the raw event log (issue #24).
 -- Single row (id = 1). O(1) to read; kept in sync as events fold, and
